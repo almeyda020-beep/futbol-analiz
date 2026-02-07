@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Elite Futbol Analiz</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Futbol Analiz">
+<meta name="application-name" content="Elite Futbol Analiz">
+<meta name="theme-color" content="#0a0e17">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='90' fill='%230a0e17'/><circle cx='256' cy='220' r='120' fill='none' stroke='%2300e68a' stroke-width='12'/><path d='M256 100v240M136 220h240' stroke='%2300e68a' stroke-width='8' opacity='.3'/><polygon points='256,140 280,200 256,180 232,200' fill='%2300e68a'/><text x='256' y='400' text-anchor='middle' fill='%2300e68a' font-size='48' font-family='sans-serif' font-weight='bold'>EFA</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='90' fill='%230a0e17'/><circle cx='256' cy='220' r='120' fill='none' stroke='%2300e68a' stroke-width='12'/><text x='256' y='400' text-anchor='middle' fill='%2300e68a' font-size='48' font-family='sans-serif' font-weight='bold'>EFA</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root { --bg-primary: #0a0e17; --bg-secondary: #111827; --bg-card: #1a2235; --accent-green: #00e68a; --accent-green-dim: rgba(0,230,138,0.15); --accent-red: #ff4757; --accent-red-dim: rgba(255,71,87,0.15); --accent-blue: #3b82f6; --accent-blue-dim: rgba(59,130,246,0.15); --accent-orange: #ff9f43; --accent-orange-dim: rgba(255,159,67,0.15); --accent-cyan: #06b6d4; --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: rgba(255,255,255,0.06); --border-light: rgba(255,255,255,0.1); --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); }
+* { margin:0; padding:0; box-sizing:border-box; }
+html { background: var(--bg-primary); overscroll-behavior: none; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; min-height: 100dvh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0,230,138,0.04) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59,130,246,0.04) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+input, .pred-table, .extract-item, .half-stat-row, .market-stat, .gauge-value, .poisson-cell, pre { -webkit-user-select: text; user-select: text; }
+.container { max-width: 1400px; margin: 0 auto; padding: 12px; position: relative; z-index: 1; }
+.install-banner { display: none; background: linear-gradient(135deg, rgba(0,230,138,0.15), rgba(59,130,246,0.15)); border: 1px solid rgba(0,230,138,0.3); border-radius: 16px; padding: 16px; margin-bottom: 16px; animation: slideDown 0.5s ease-out; }
+.install-banner.visible { display: block; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+.install-banner-content { display: flex; align-items: center; gap: 14px; }
+.install-banner-icon { font-size: 36px; flex-shrink: 0; }
+.install-banner-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.install-banner-text p { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.install-banner-actions { display: flex; gap: 8px; margin-top: 12px; }
+.install-btn { padding: 10px 20px; border: none; border-radius: 10px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+.install-btn-primary { background: linear-gradient(135deg, var(--accent-green), #00c472); color: #000; }
+.install-btn-dismiss { background: var(--bg-secondary); color: var(--text-muted); border: 1px solid var(--border-light); }
+.ios-guide { display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+.ios-guide.visible { display: block; }
+.ios-guide h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.ios-step { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.ios-step:last-child { border-bottom: none; }
+.ios-step-num { width: 28px; height: 28px; background: var(--accent-green-dim); color: var(--accent-green); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.ios-step-text { color: var(--text-secondary); }
+.ios-step-text strong { color: var(--text-primary); }
+.app-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,14,23,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: calc(8px + var(--safe-bottom)); z-index: 1000; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 16px; border: none; background: none; color: var(--text-muted); font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600; cursor: pointer; transition: color 0.3s; border-radius: 8px; }
+.nav-item.active { color: var(--accent-green); }
+.nav-item:hover { color: var(--text-primary); }
+.nav-item .nav-icon { font-size: 20px; }
+.header { text-align: center; padding: 20px 12px 16px; }
+.header-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-green-dim); border: 1px solid rgba(0,230,138,0.3); border-radius: 100px; padding: 5px 14px; font-size: 10px; font-weight: 600; color: var(--accent-green); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+.header-badge::before { content: ''; width: 5px; height: 5px; background: var(--accent-green); border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.5); } }
+.header h1 { font-family: 'Playfair Display', serif; font-size: clamp(22px, 6vw, 40px); font-weight: 900; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+.header p { color: var(--text-muted); font-size: 12px; }
+.page { display: none; padding-bottom: 80px; }
+.page.active { display: block; animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.upload-zone { background: var(--bg-card); border: 2px dashed rgba(0,230,138,0.3); border-radius: 20px; padding: 36px 20px; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 16px; position: relative; }
+.upload-zone:active { transform: scale(0.98); }
+.upload-zone.processing { border-color: var(--accent-blue); pointer-events: none; }
+.upload-zone.success { border-color: var(--accent-green); border-style: solid; }
+.upload-zone.error { border-color: var(--accent-red); border-style: solid; }
+.upload-icon { font-size: 44px; margin-bottom: 12px; display: block; }
+.upload-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.upload-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
+.upload-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: linear-gradient(135deg, var(--accent-green), #00c472); color: #000; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+#fileInput { display: none; }
+.progress-wrap { display: none; margin-top: 16px; }
+.progress-wrap.visible { display: block; }
+.progress-bar-bg { width:100%; height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent-green),var(--accent-cyan)); border-radius:3px; transition:width 0.3s; width:0%; }
+.progress-text { margin-top:6px; font-size:11px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace; }
+.parse-log { display:none; margin-top:12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:12px; padding:12px; max-height:200px; overflow-y:auto; text-align:left; }
+.parse-log.visible { display:block; }
+.parse-log-entry { font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 0; display:flex; align-items:center; gap:6px; }
+.parse-log-entry.success { color:var(--accent-green); }
+.parse-log-entry.warn { color:var(--accent-orange); }
+.parse-log-entry.error { color:var(--accent-red); }
+.parse-log-entry.info { color:var(--accent-cyan); }
+.extracted-preview { display:none; background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:16px; }
+.extracted-preview.visible { display:block; }
+.extracted-preview h3 { font-size:15px; font-weight:700; margin-bottom:4px; }
+.extracted-preview .subtitle { font-size:11px; color:var(--text-muted); margin-bottom:14px; }
+.extract-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.extract-item { display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:var(--bg-secondary); border-radius:8px; font-size:11px; }
+.extract-item .label { color:var(--text-secondary); font-size:10px; }
+.extract-item .vals { display:flex; gap:6px; font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11px; }
+.extract-item .val-home { color:var(--accent-green); }
+.extract-item .val-away { color:var(--accent-blue); }
+.raw-text-section { display:none; background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:10px; max-height:150px; overflow-y:auto; }
+.raw-text-section.visible { display:block; }
+.raw-text-section pre { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-secondary); white-space:pre-wrap; word-break:break-all; }
+.action-row { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.btn { padding: 12px 24px; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; -webkit-tap-highlight-color: transparent; }
+.btn:active { transform: scale(0.96); }
+.btn-primary { background:linear-gradient(135deg,var(--accent-green),#00c472); color:#000; }
+.btn-secondary { background:var(--bg-secondary); border:1px solid var(--border-light); color:var(--text-secondary); }
+.btn-outline { background:transparent; border:1px solid var(--border-light); color:var(--text-secondary); }
+.btn-sm { padding:8px 14px; font-size:11px; border-radius:8px; }
+.input-section { display:none; background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:16px; }
+.input-section.visible { display:block; }
+.input-section h2 { font-size:15px; font-weight:700; margin-bottom:4px; }
+.input-section > p { color:var(--text-secondary); font-size:11px; margin-bottom:16px; }
+.teams-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.team-input-group label { display:block; font-size:9px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:5px; }
+.team-input-group input { width:100%; padding:10px 12px; background:var(--bg-secondary); border:1px solid var(--border-light); border-radius:10px; color:var(--text-primary); font-family:'Outfit',sans-serif; font-size:14px; font-weight:500; }
+.team-input-group input:focus { outline:none; border-color:var(--accent-green); }
+.section-divider { display:flex; align-items:center; gap:8px; margin:16px 0 10px; font-size:10px; font-weight:700; color:var(--accent-cyan); text-transform:uppercase; letter-spacing:2px; }
+.section-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border-light),transparent); }
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.stat-input label { display:block; font-size:9px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.stat-input-row { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+.stat-input input { width:100%; padding:8px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:'JetBrains Mono',monospace; font-size:12px; text-align:center; }
+.stat-input input:focus { outline:none; border-color:var(--accent-blue); }
+.stat-input input::placeholder { color:var(--text-muted); font-size:9px; }
+.stat-input input.auto-filled { border-color:rgba(0,230,138,0.4); background:rgba(0,230,138,0.05); }
+.results-section { display:none; animation:fadeInUp 0.5s ease-out; }
+.results-section.visible { display:block; }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.match-header { background:var(--bg-card); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:14px; display:flex; align-items:center; justify-content:center; gap:24px; }
+.match-team { text-align:center; }
+.match-team .name { font-size:18px; font-weight:800; }
+.match-team .tag { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:3px; }
+.match-vs .icon { font-size:20px; font-weight:900; color:var(--text-muted); }
+.gauge-section { display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:14px; }
+.gauge-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:16px; position:relative; overflow:hidden; }
+.gauge-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.gauge-card.high::before { background:var(--accent-green); }
+.gauge-card.medium::before { background:var(--accent-orange); }
+.gauge-card.low::before { background:var(--accent-red); }
+.gauge-title { font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+.gauge-stars { display:flex; gap:3px; }
+.gauge-stars .star { width:12px; height:12px; border-radius:3px; }
+.gauge-stars .star.filled { background:var(--accent-green); }
+.gauge-stars .star.empty { background:var(--border); }
+.gauge-bar-wrap { background:var(--bg-secondary); border-radius:6px; height:8px; overflow:hidden; margin-bottom:8px; }
+.gauge-bar { height:100%; border-radius:6px; transition:width 1s ease-out; }
+.gauge-bar.green { background:linear-gradient(90deg,#00c472,var(--accent-green)); }
+.gauge-bar.orange { background:linear-gradient(90deg,#e67e22,var(--accent-orange)); }
+.gauge-bar.red { background:linear-gradient(90deg,#c0392b,var(--accent-red)); }
+.gauge-value { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; margin-bottom:3px; }
+.gauge-value.green { color:var(--accent-green); }
+.gauge-value.orange { color:var(--accent-orange); }
+.gauge-value.red { color:var(--accent-red); }
+.gauge-detail { font-size:10px; color:var(--text-muted); }
+.gauge-indicators { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.indicator { display:inline-flex; align-items:center; gap:3px; padding:3px 7px; border-radius:5px; font-size:9px; font-weight:600; }
+.indicator.pass { background:var(--accent-green-dim); color:var(--accent-green); }
+.indicator.fail { background:var(--accent-red-dim); color:var(--accent-red); }
+.pred-table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px; overflow-x:auto; }
+.pred-table-wrap h3 { font-size:14px; font-weight:700; margin-bottom:12px; }
+.pred-table { width:100%; border-collapse:collapse; }
+.pred-table th { text-align:left; font-size:8px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; padding:6px 8px; border-bottom:1px solid var(--border); }
+.pred-table td { padding:10px 8px; font-size:11px; border-bottom:1px solid var(--border); }
+.pred-table tr:last-child td { border-bottom:none; }
+.confidence-pill { display:inline-flex; padding:3px 8px; border-radius:5px; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+.confidence-pill.high { background:var(--accent-green-dim); color:var(--accent-green); }
+.confidence-pill.medium { background:var(--accent-orange-dim); color:var(--accent-orange); }
+.confidence-pill.low { background:var(--accent-red-dim); color:var(--accent-red); }
+.verdict { font-weight:700; font-size:10px; }
+.verdict.play { color:var(--accent-green); }
+.verdict.caution { color:var(--accent-orange); }
+.verdict.skip { color:var(--accent-red); }
+.poisson-grid { display:grid; gap:2px; }
+.poisson-cell { text-align:center; padding:5px 2px; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:600; background:var(--bg-secondary); border:1px solid var(--border); }
+.poisson-cell.header { font-size:8px; color:var(--text-muted); background:transparent; border:none; }
+.poisson-cell.highlight { background:var(--accent-green-dim); border-color:rgba(0,230,138,0.3); color:var(--accent-green); }
+.half-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.half-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+.half-card h3 { font-size:13px; font-weight:700; margin-bottom:10px; }
+.half-stat-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:11px; }
+.half-stat-row:last-child { border-bottom:none; }
+.half-stat-row .label { color:var(--text-secondary); font-size:10px; }
+.half-stat-row .val { font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11px; }
+.market-grid { display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:14px; }
+.market-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:16px; }
+.market-card h3 { font-size:13px; font-weight:700; margin-bottom:3px; }
+.market-card .subtitle { font-size:10px; color:var(--text-muted); margin-bottom:12px; }
+.market-stat { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); }
+.market-stat:last-child { border-bottom:none; }
+.market-stat .name { font-size:11px; color:var(--text-secondary); }
+.market-stat .values { display:flex; gap:10px; align-items:center; }
+.market-stat .val { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; min-width:36px; text-align:right; }
+.market-stat .bar-mini { width:50px; height:4px; background:var(--bg-secondary); border-radius:2px; overflow:hidden; }
+.market-stat .bar-mini-fill { height:100%; border-radius:2px; }
+.method-section { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px; }
+.method-section h3 { font-size:13px; font-weight:700; margin-bottom:12px; }
+.method-steps { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.method-step { padding:12px; background:var(--bg-secondary); border-radius:10px; border:1px solid var(--border); }
+.method-step .num { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; color:var(--accent-cyan); margin-bottom:4px; }
+.method-step .title { font-size:11px; font-weight:700; margin-bottom:3px; }
+.method-step .desc { font-size:9px; color:var(--text-muted); line-height:1.4; }
+.footer { text-align:center; padding:20px; font-size:9px; color:var(--text-muted); padding-bottom:80px; }
+@media (min-width:768px) {
+  .gauge-section { grid-template-columns:1fr 1fr; }
+  .stat-grid { grid-template-columns:repeat(3,1fr); }
+  .market-grid { grid-template-columns:1fr 1fr 1fr; }
+  .extract-grid { grid-template-columns:repeat(3,1fr); }
+  .method-steps { grid-template-columns:repeat(4,1fr); }
+  .app-nav { display:none; }
+  .page { padding-bottom: 20px; }
+  .footer { padding-bottom: 20px; }
+}
+.splash {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s;
+}
+.splash.hidden { opacity: 0; pointer-events: none; }
+.splash-icon { font-size: 64px; margin-bottom: 16px; animation: bounceIn 0.6s ease-out; }
+.splash-title { font-family:'Playfair Display',serif; font-size:24px; font-weight:900; color:#fff; margin-bottom:8px; }
+.splash-sub { font-size:12px; color:var(--text-muted); }
+@keyframes bounceIn {
+  0% { transform:scale(0); opacity:0; }
+  60% { transform:scale(1.2); }
+  100% { transform:scale(1); opacity:1; }
+}
+.splash-loader { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--accent-green); border-radius:50%; animation:spin 0.8s linear infinite; margin-top:24px; }
+@keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+<div class="splash" id="splash">
+  <div class="splash-icon">⚽</div>
+  <div class="splash-title">Elite Futbol Analiz</div>
+  <div class="splash-sub">v6.1 PWA — Yükleniyor...</div>
+  <div class="splash-loader"></div>
+</div>
+<div class="container">
+  <div class="install-banner" id="installBanner">
+    <div class="install-banner-content">
+      <span class="install-banner-icon">📲</span>
+      <div class="install-banner-text">
+        <h4>Uygulamayı Yükle</h4>
+        <p>Ana ekranınıza ekleyerek uygulama gibi kullanabilirsiniz.</p>
+      </div>
+    </div>
+    <div class="install-banner-actions">
+      <button class="install-btn install-btn-primary" id="installBtn" onclick="installApp()">Yükle</button>
+      <button class="install-btn install-btn-dismiss" onclick="dismissInstall()">Şimdi Değil</button>
+    </div>
+  </div>
+  <div class="ios-guide" id="iosGuide">
+    <h4>📱 iPhone'a Yükleme</h4>
+    <div class="ios-step">
+      <span class="ios-step-num">1</span>
+      <span class="ios-step-text">Altta <strong>Paylaş</strong> butonuna (⎙) dokunun</span>
+    </div>
+    <div class="ios-step">
+      <span class="ios-step-num">2</span>
+      <span class="ios-step-text"><strong>"Ana Ekrana Ekle"</strong> seçeneğini bulun</span>
+    </div>
+    <div class="ios-step">
+      <span class="ios-step-num">3</span>
+      <span class="ios-step-text">Sağ üstten <strong>"Ekle"</strong> butonuna dokunun</span>
+    </div>
+    <div class="ios-step">
+      <span class="ios-step-num">✅</span>
+      <span class="ios-step-text">Artık ana ekranınızdan uygulama gibi açabilirsiniz!</span>
+    </div>
+    <button class="btn btn-sm btn-outline" onclick="$('iosGuide').classList.remove('visible')" style="margin-top:12px;">Anladım, Kapat</button>
+  </div>
+  <div class="header">
+    <div class="header-badge">ELİTE ANALİZ v6.1</div>
+    <h1>Futbol Maç Analizi</h1>
+    <p>PDF yükle → Otomatik analiz → Tahmin</p>
+  </div>
+  <div class="page active" id="pageUpload">
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept=".pdf" onchange="handleFileUpload(event)">
+      <span class="upload-icon">📄</span>
+      <div class="upload-title">PDF Yükle</div>
+      <div class="upload-subtitle">MakeYourStats istatistik PDF'ini seçin</div>
+      <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('fileInput').click()">📱 Dosya Seç</button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">Hazırlanıyor...</div>
+      </div>
+    </div>
+    <div class="parse-log" id="parseLog"></div>
+    <div class="extracted-preview" id="extractedPreview">
+      <h3>✅ Çıkarılan Veriler</h3>
+      <div class="subtitle">PDF'den okunan istatistikler</div>
+      <div class="extract-grid" id="extractGrid"></div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-sm btn-outline" onclick="toggleRawText()">🔍 Ham Metin</button>
+      </div>
+      <div class="raw-text-section" id="rawTextSection"><pre id="rawTextContent"></pre></div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="runAnalysis();switchPage('results')">⚡ Analiz Et</button>
+        <button class="btn btn-secondary" onclick="switchPage('manual')">✏️ Düzenle</button>
+        <button class="btn btn-outline" onclick="resetAll()">🗑 Sıfırla</button>
+      </div>
+    </div>
+  </div>
+  <div class="page" id="pageManual">
+    <div class="input-section visible">
+      <h2>✏️ Manuel Giriş</h2>
+      <p>Verileri manuel girin veya PDF'den çıkarılan verileri düzenleyin</p>
+      <div class="teams-row">
+        <div class="team-input-group"><label>Ev Sahibi</label><input type="text" id="homeTeam" placeholder="Takım adı..."></div>
+        <div class="team-input-group"><label>Deplasman</label><input type="text" id="awayTeam" placeholder="Takım adı..."></div>
+      </div>
+      <div class="section-divider">⚽ Goller</div>
+      <div class="stat-grid">
+        <div class="stat-input"><label>Ort. Maç Golü</label><div class="stat-input-row"><input type="number" step="0.1" id="avgGoalHome" placeholder="Ev"><input type="number" step="0.1" id="avgGoalAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Ort. Atılan</label><div class="stat-input-row"><input type="number" step="0.1" id="avgScoredHome" placeholder="Ev"><input type="number" step="0.1" id="avgScoredAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Ort. Yenilen</label><div class="stat-input-row"><input type="number" step="0.1" id="avgConcHome" placeholder="Ev"><input type="number" step="0.1" id="avgConcAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>xG</label><div class="stat-input-row"><input type="number" step="0.01" id="xgHome" placeholder="Ev"><input type="number" step="0.01" id="xgAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>xGA</label><div class="stat-input-row"><input type="number" step="0.01" id="xgaHome" placeholder="Ev"><input type="number" step="0.01" id="xgaAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Galibiyet %</label><div class="stat-input-row"><input type="number" step="1" id="winPctHome" placeholder="Ev"><input type="number" step="1" id="winPctAway" placeholder="Dep"></div></div>
+      </div>
+      <div class="section-divider">📈 Yüzdeler</div>
+      <div class="stat-grid">
+        <div class="stat-input"><label>Üst 2.5 %</label><div class="stat-input-row"><input type="number" step="1" id="over25Home" placeholder="Ev"><input type="number" step="1" id="over25Away" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Üst 1.5 %</label><div class="stat-input-row"><input type="number" step="1" id="over15Home" placeholder="Ev"><input type="number" step="1" id="over15Away" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Üst 3.5 %</label><div class="stat-input-row"><input type="number" step="1" id="over35Home" placeholder="Ev"><input type="number" step="1" id="over35Away" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>KG %</label><div class="stat-input-row"><input type="number" step="1" id="bttsHome" placeholder="Ev"><input type="number" step="1" id="bttsAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Gol Atamayan %</label><div class="stat-input-row"><input type="number" step="1" id="failScoreHome" placeholder="Ev"><input type="number" step="1" id="failScoreAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Gol Yemez %</label><div class="stat-input-row"><input type="number" step="1" id="cleanSheetHome" placeholder="Ev"><input type="number" step="1" id="cleanSheetAway" placeholder="Dep"></div></div>
+      </div>
+      <div class="section-divider">⏱ Yarılar</div>
+      <div class="stat-grid">
+        <div class="stat-input"><label>1Y Gol</label><div class="stat-input-row"><input type="number" step="0.1" id="avgGoal1hHome" placeholder="Ev"><input type="number" step="0.1" id="avgGoal1hAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>1Y Atılan</label><div class="stat-input-row"><input type="number" step="0.1" id="scored1hHome" placeholder="Ev"><input type="number" step="0.1" id="scored1hAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>1Y Yenilen</label><div class="stat-input-row"><input type="number" step="0.1" id="conc1hHome" placeholder="Ev"><input type="number" step="0.1" id="conc1hAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>2Y Gol</label><div class="stat-input-row"><input type="number" step="0.1" id="avgGoal2hHome" placeholder="Ev"><input type="number" step="0.1" id="avgGoal2hAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>2Y Atılan</label><div class="stat-input-row"><input type="number" step="0.1" id="scored2hHome" placeholder="Ev"><input type="number" step="0.1" id="scored2hAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>2Y Yenilen</label><div class="stat-input-row"><input type="number" step="0.1" id="conc2hHome" placeholder="Ev"><input type="number" step="0.1" id="conc2hAway" placeholder="Dep"></div></div>
+      </div>
+      <div class="section-divider">🚩 Korner</div>
+      <div class="stat-grid">
+        <div class="stat-input"><label>Maç Korner</label><div class="stat-input-row"><input type="number" step="0.1" id="avgCornerHome" placeholder="Ev"><input type="number" step="0.1" id="avgCornerAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Takım Korner</label><div class="stat-input-row"><input type="number" step="0.1" id="teamCornerHome" placeholder="Ev"><input type="number" step="0.1" id="teamCornerAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Korner Karşı</label><div class="stat-input-row"><input type="number" step="0.1" id="teamCornerAgHome" placeholder="Ev"><input type="number" step="0.1" id="teamCornerAgAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Üst 9.5 %</label><div class="stat-input-row"><input type="number" step="1" id="over95cornerHome" placeholder="Ev"><input type="number" step="1" id="over95cornerAway" placeholder="Dep"></div></div>
+      </div>
+      <div class="section-divider">🟨 Kart</div>
+      <div class="stat-grid">
+        <div class="stat-input"><label>Maç Kartı</label><div class="stat-input-row"><input type="number" step="0.1" id="avgCardHome" placeholder="Ev"><input type="number" step="0.1" id="avgCardAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Takım Kartı</label><div class="stat-input-row"><input type="number" step="0.1" id="teamCardHome" placeholder="Ev"><input type="number" step="0.1" id="teamCardAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Kart Karşı</label><div class="stat-input-row"><input type="number" step="0.1" id="teamCardAgHome" placeholder="Ev"><input type="number" step="0.1" id="teamCardAgAway" placeholder="Dep"></div></div>
+      </div>
+      <div class="section-divider">📋 Ek</div>
+      <div class="stat-grid">
+        <div class="stat-input"><label>Top Hak. %</label><div class="stat-input-row"><input type="number" step="0.1" id="possHome" placeholder="Ev"><input type="number" step="0.1" id="possAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>İsabetli Şut</label><div class="stat-input-row"><input type="number" step="0.1" id="sogHome" placeholder="Ev"><input type="number" step="0.1" id="sogAway" placeholder="Dep"></div></div>
+        <div class="stat-input"><label>Tehlikeli Atak</label><div class="stat-input-row"><input type="number" step="0.1" id="dangerHome" placeholder="Ev"><input type="number" step="0.1" id="dangerAway" placeholder="Dep"></div></div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="runAnalysis();switchPage('results')">⚡ Analiz Et</button>
+        <button class="btn btn-outline" onclick="resetAll()">🗑 Temizle</button>
+      </div>
+    </div>
+  </div>
+  <div class="page" id="pageResults">
+    <div class="results-section visible" id="results">
+      <div class="match-header">
+        <div class="match-team"><div class="name" id="rHomeTeam">—</div><div class="tag">🏠 Ev Sahibi</div></div>
+        <div class="match-vs"><div class="icon">VS</div></div>
+        <div class="match-team"><div class="name" id="rAwayTeam">—</div><div class="tag">✈️ Deplasman</div></div>
+      </div>
+      <div class="gauge-section" id="gaugeSection"></div>
+      <div class="pred-table-wrap">
+        <h3>📊 Piyasa Analizi</h3>
+        <table class="pred-table"><thead><tr><th>Piyasa</th><th>Tahmin</th><th>Güven</th><th>Uyum</th><th>Karar</th></tr></thead><tbody id="predTableBody"></tbody></table>
+      </div>
+      <div class="pred-table-wrap">
+        <h3>🧮 Poisson — Skor Olasılıkları</h3>
+        <div id="poissonGrid"></div>
+        <div style="margin-top:10px;" id="poissonSummary"></div>
+      </div>
+      <div class="half-grid" id="halfGrid"></div>
+      <div class="market-grid" id="marketGrid"></div>
+      <div class="method-section">
+        <h3>🔬 Metodoloji</h3>
+        <div class="method-steps">
+          <div class="method-step"><div class="num">01</div><div class="title">Confluence</div><div class="desc">3-6 bağımsız gösterge uyumu</div></div>
+          <div class="method-step"><div class="num">02</div><div class="title">Poisson+xG</div><div class="desc">λ hesaplama ve skor dağılımı</div></div>
+          <div class="method-step"><div class="num">03</div><div class="title">Yarı Analizi</div><div class="desc">1Y/2Y asimetri sinyalleri</div></div>
+          <div class="method-step"><div class="num">04</div><div class="title">Filtre</div><div class="desc">Sadece ⭐⭐⭐ = OYNA</div></div>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="switchPage('upload');resetAll()">📄 Yeni Analiz</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Elite Futbol Analiz v6.1 PWA — İstatistiksel modellere dayalıdır.</div>
+</div>
+<nav class="app-nav">
+  <button class="nav-item active" onclick="switchPage('upload')" id="navUpload"><span class="nav-icon">📄</span>PDF Yükle</button>
+  <button class="nav-item" onclick="switchPage('manual')" id="navManual"><span class="nav-icon">✏️</span>Manuel</button>
+  <button class="nav-item" onclick="switchPage('results')" id="navResults"><span class="nav-icon">📊</span>Sonuçlar</button>
+</nav>
+<script>
+const manifest = {
+  name: "Elite Futbol Analiz Sistemi",
+  short_name: "Futbol Analiz",
+  description: "PDF tabanlı futbol maç analiz uygulaması",
+  start_url: "./",
+  display: "standalone",
+  orientation: "portrait",
+  background_color: "#0a0e17",
+  theme_color: "#0a0e17",
+  categories: ["sports","utilities"],
+  icons: [
+    { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='90' fill='%230a0e17'/><circle cx='256' cy='220' r='120' fill='none' stroke='%2300e68a' stroke-width='12'/><text x='256' y='240' text-anchor='middle' fill='%2300e68a' font-size='90' font-family='sans-serif'>⚽</text><text x='256' y='410' text-anchor='middle' fill='%2300e68a' font-size='44' font-family='sans-serif' font-weight='bold'>EFA</text></svg>", sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+  ]
+};
+const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+const manifestURL = URL.createObjectURL(manifestBlob);
+const manifestLink = document.createElement('link');
+manifestLink.rel = 'manifest';
+manifestLink.href = manifestURL;
+document.head.appendChild(manifestLink);
+const swCode = `
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    fetch(e.request).catch(() => {
+      return new Response('<h1 style="font-family:sans-serif;text-align:center;padding:40px;color:#94a3b8;background:#0a0e17;min-height:100vh;">Çevrimdışı — İnternet bağlantısı gerekli</h1>', 
+        { headers: { 'Content-Type': 'text/html' } }
+      );
+    })
+  );
+});
+`;
+if ('serviceWorker' in navigator) {
+  const swBlob = new Blob([swCode], { type: 'application/javascript' });
+  const swURL = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swURL).catch(() => {});
+}
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $('installBanner').classList.add('visible');
+});
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(result => {
+      deferredPrompt = null;
+      $('installBanner').classList.remove('visible');
+    });
+  }
+}
+function dismissInstall() {
+  $('installBanner').classList.remove('visible');
+}
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+if (isIOS && !isStandalone) {
+  setTimeout(() => {
+    $('iosGuide').classList.add('visible');
+  }, 2000);
+}
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    $('splash').classList.add('hidden');
+    setTimeout(() => $('splash').style.display = 'none', 500);
+  }, 1200);
+});
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $ = id => document.getElementById(id);
+const val = id => parseFloat($(id)?.value) || 0;
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  $('page' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+  $('nav' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (file) processPDF(file);
+}
+async function processPDF(file) {
+  const zone = $('uploadZone');
+  const bar = $('progressBar');
+  const text = $('progressText');
+  const log = $('parseLog');
+  zone.classList.add('processing');
+  $('progressWrap').classList.add('visible');
+  log.classList.add('visible');
+  log.innerHTML = '';
+  addLog('info', `📄 ${file.name} (${(file.size/1024).toFixed(0)} KB)`);
+  bar.style.width = '10%';
+  text.textContent = 'PDF okunuyor...';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    bar.style.width = '30%';
+    addLog('info', '📖 Metin çıkarılıyor...');
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      fullText += content.items.map(item => item.str).join(' ') + '\n';
+      bar.style.width = `${30 + (i/pdf.numPages)*30}%`;
+    }
+    bar.style.width = '70%';
+    text.textContent = 'Parse ediliyor...';
+    $('rawTextContent').textContent = fullText;
+    const parsed = parseStats(fullText);
+    bar.style.width = '100%';
+    text.textContent = `✅ ${parsed.foundCount} istatistik çıkarıldı!`;
+    zone.classList.remove('processing');
+    zone.classList.add('success');
+    zone.querySelector('.upload-icon').textContent = '✅';
+    zone.querySelector('.upload-title').textContent = 'Başarılı!';
+    zone.querySelector('.upload-subtitle').textContent = `${parsed.foundCount} veri noktası çıkarıldı.`;
+    fillFormFields(parsed);
+    showExtractedPreview(parsed);
+    addLog('success', `✅ ${parsed.foundCount} veri çıkarıldı.`);
+    if (navigator.vibrate) navigator.vibrate(100);
+  } catch (err) {
+    zone.classList.remove('processing');
+    zone.classList.add('error');
+    text.textContent = '❌ Okunamadı!';
+    addLog('error', `❌ ${err.message}`);
+    addLog('warn', '⚠️ Manuel giriş kullanın.');
+  }
+}
+function addLog(type, msg) {
+  const log = $('parseLog');
+  const e = document.createElement('div');
+  e.className = `parse-log-entry ${type}`;
+  e.textContent = msg;
+  log.appendChild(e);
+  log.scrollTop = log.scrollHeight;
+}
+function parseStats(text) {
+  const data = {};
+  let foundCount = 0;
+  const t = text.replace(/\s+/g, ' ').replace(/,/g, '.');
+  const tm = t.match(/([A-Za-zÀ-ÿÄäÖöÜüß\s\-\.]{3,30})\s+\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}\s+([A-Za-zÀ-ÿÄäÖöÜüß\s\-\.]{3,30})/);
+  if (tm) {
+    data.homeTeam = tm[1].trim();
+    data.awayTeam = tm[2].trim();
+    addLog('success', `⚽ ${data.homeTeam} vs ${data.awayTeam}`);
+    foundCount += 2;
+  }
+  function extractPair(key, txt) {
+    for (const pat of [
+      new RegExp(`([\\d\\.]+)%?\\s+${key}\\s+([\\d\\.]+)%?`, 'i'),
+      new RegExp(`${key}[\\s:]*([\\d\\.]+)%?[\\s]+([\\d\\.]+)%?`, 'i'),
+      new RegExp(`(\\d+\\.?\\d*)\\s*%?\\s*${key}\\s*(\\d+\\.?\\d*)\\s*%?`, 'i'),
+    ]) {
+      const m = txt.match(pat);
+      if (m) return [parseFloat(m[1]), parseFloat(m[2])];
+    }
+    return null;
+  }
+  const mappings = [
+    { key:'Ort\\. maç gol(?!\\s*1Y|\\s*2Y)', f:['avgGoalHome','avgGoalAway'], l:'Ort. maç gol' },
+    { key:'Ort\\. atılan gol(?!\\s*1Y|\\s*2Y)', f:['avgScoredHome','avgScoredAway'], l:'Ort. atılan gol' },
+    { key:'Ort\\. yenilen gol(?!\\s*1Y|\\s*2Y)', f:['avgConcHome','avgConcAway'], l:'Ort. yenilen gol' },
+    { key:'Beklenen goller \\(xG\\)|xG', f:['xgHome','xgAway'], l:'xG' },
+    { key:'beklenen goller \\(xGA\\)|xGA', f:['xgaHome','xgaAway'], l:'xGA' },
+    { key:'Galip', f:['winPctHome','winPctAway'], l:'Galibiyet %' },
+    { key:'Üst 2\\.5 maç', f:['over25Home','over25Away'], l:'Üst 2.5 %' },
+    { key:'Üst 1\\.5 maç(?!.*korner)', f:['over15Home','over15Away'], l:'Üst 1.5 %' },
+    { key:'Üst 3\\.5 maç', f:['over35Home','over35Away'], l:'Üst 3.5 %' },
+    { key:'KG(?!\\s*&|\\s*1Y|\\s*2Y)', f:['bttsHome','bttsAway'], l:'KG %' },
+    { key:'Gol atamayan(?!\\s*1Y|\\s*2Y)', f:['failScoreHome','failScoreAway'], l:'Gol atamayan %' },
+    { key:'Gol yemez(?!\\s*1Y|\\s*2Y)', f:['cleanSheetHome','cleanSheetAway'], l:'Gol yemez %' },
+    { key:'Ort\\. maç gol 1Y', f:['avgGoal1hHome','avgGoal1hAway'], l:'1Y gol' },
+    { key:'Ort\\. atılan gol 1Y', f:['scored1hHome','scored1hAway'], l:'1Y atılan' },
+    { key:'Ort\\. yenilen gol 1Y', f:['conc1hHome','conc1hAway'], l:'1Y yenilen' },
+    { key:'Ort\\. maç gol 2Y', f:['avgGoal2hHome','avgGoal2hAway'], l:'2Y gol' },
+    { key:'Ort\\. atılan gol 2Y', f:['scored2hHome','scored2hAway'], l:'2Y atılan' },
+    { key:'Ort\\. yenilen gol 2Y', f:['conc2hHome','conc2hAway'], l:'2Y yenilen' },
+    { key:'Ort\\. maç korner(?!\\s*1Y|\\s*2Y)', f:['avgCornerHome','avgCornerAway'], l:'Maç korner' },
+    { key:'Ort\\. takım korner iç', f:['teamCornerHome','teamCornerAway'], l:'Takım korner' },
+    { key:'Ort\\. takım korner karşı', f:['teamCornerAgHome','teamCornerAgAway'], l:'Korner karşı' },
+    { key:'Üst 9\\.5 maç', f:['over95cornerHome','over95cornerAway'], l:'Üst 9.5 korner %' },
+    { key:'Ort\\. maç kartı(?!\\s*1Y|\\s*2Y)', f:['avgCardHome','avgCardAway'], l:'Maç kartı' },
+    { key:'Ort\\. takım kartı iç', f:['teamCardHome','teamCardAway'], l:'Takım kartı' },
+    { key:'Ort\\. takım kartı karşı', f:['teamCardAgHome','teamCardAgAway'], l:'Kart karşı' },
+    { key:'Ort\\. top hakimiyeti', f:['possHome','possAway'], l:'Top hakimiyeti' },
+    { key:'Ort\\. isabetli şut(?!\\s*karşı)', f:['sogHome','sogAway'], l:'İsabetli şut' },
+    { key:'Ort\\. tehlikeli atak(?!\\s*karşı)', f:['dangerHome','dangerAway'], l:'Tehlikeli atak' },
+  ];
+  for (const m of mappings) {
+    const pair = extractPair(m.key, t);
+    if (pair) {
+      data[m.f[0]] = pair[0]; data[m.f[1]] = pair[1];
+      addLog('success', `✓ ${m.l}: ${pair[0]} | ${pair[1]}`);
+      foundCount += 2;
+    } else {
+      addLog('warn', `⚠ ${m.l}: bulunamadı`);
+    }
+  }
+  data.foundCount = foundCount;
+  return data;
+}
+function fillFormFields(data) {
+  for (const [key, val] of Object.entries(data)) {
+    const el = $(key);
+    if (el && val !== undefined && key !== 'foundCount') {
+      el.value = val;
+      el.classList.add('auto-filled');
+    }
+  }
+}
+function showExtractedPreview(data) {
+  const items = [
+    {l:'Ort. Maç Golü',h:data.avgGoalHome,a:data.avgGoalAway},
+    {l:'Ort. Atılan',h:data.avgScoredHome,a:data.avgScoredAway},
+    {l:'Ort. Yenilen',h:data.avgConcHome,a:data.avgConcAway},
+    {l:'xG',h:data.xgHome,a:data.xgAway},
+    {l:'xGA',h:data.xgaHome,a:data.xgaAway},
+    {l:'Galibiyet %',h:data.winPctHome,a:data.winPctAway},
+    {l:'Üst 2.5 %',h:data.over25Home,a:data.over25Away},
+    {l:'KG %',h:data.bttsHome,a:data.bttsAway},
+    {l:'Maç Korner',h:data.avgCornerHome,a:data.avgCornerAway},
+    {l:'Maç Kartı',h:data.avgCardHome,a:data.avgCardAway},
+    {l:'Top Hak. %',h:data.possHome,a:data.possAway},
+    {l:'İsab. Şut',h:data.sogHome,a:data.sogAway},
+  ];
+  $('extractGrid').innerHTML = items.filter(i=>i.h!==undefined||i.a!==undefined).map(i=>`
+    <div class="extract-item"><span class="label">${i.l}</span><span class="vals"><span class="val-home">${i.h??'—'}</span><span style="color:var(--text-muted)">|</span><span class="val-away">${i.a??'—'}</span></span></div>
+  `).join('');
+  if(data.homeTeam) $('extractedPreview').querySelector('h3').innerHTML=`✅ ${data.homeTeam} vs ${data.awayTeam||'?'}`;
+  $('extractedPreview').classList.add('visible');
+}
+function toggleRawText() { $('rawTextSection').classList.toggle('visible'); }
+function resetAll() {
+  document.querySelectorAll('input[type="number"]').forEach(i=>{i.value='';i.classList.remove('auto-filled');});
+  document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+  $('extractedPreview').classList.remove('visible');
+  $('parseLog').classList.remove('visible');
+  $('parseLog').innerHTML='';
+  const z=$('uploadZone');
+  z.classList.remove('success','error','processing');
+  z.querySelector('.upload-icon').textContent='📄';
+  z.querySelector('.upload-title').textContent='PDF Yükle';
+  z.querySelector('.upload-subtitle').textContent='MakeYourStats istatistik PDF\'ini seçin';
+  $('progressWrap').classList.remove('visible');
+  $('progressBar').style.width='0%';
+  $('fileInput').value='';
+}
+function poisson(k,l){if(l<=0)return k===0?1:0;let r=Math.exp(-l)*Math.pow(l,k);for(let i=2;i<=k;i++)r/=i;return r;}
+function confClass(s){return s>=75?'high':s>=50?'medium':'low';}
+function verdictLabel(s){return s>=75?{text:'OYNA ✅',cls:'play'}:s>=50?{text:'DİKKAT ⚠️',cls:'caution'}:{text:'GEÇ ❌',cls:'skip'};}
+function runAnalysis() {
+  const home=$('homeTeam').value||'Ev Sahibi', away=$('awayTeam').value||'Deplasman';
+  $('rHomeTeam').textContent=home; $('rAwayTeam').textContent=away;
+  const d={
+    avgGoalH:val('avgGoalHome'),avgGoalA:val('avgGoalAway'),avgScoredH:val('avgScoredHome'),avgScoredA:val('avgScoredAway'),
+    avgConcH:val('avgConcHome'),avgConcA:val('avgConcAway'),xgH:val('xgHome'),xgA:val('xgAway'),xgaH:val('xgaHome'),xgaA:val('xgaAway'),
+    winPctH:val('winPctHome'),winPctA:val('winPctAway'),over25H:val('over25Home'),over25A:val('over25Away'),
+    over15H:val('over15Home'),over15A:val('over15Away'),over35H:val('over35Home'),over35A:val('over35Away'),
+    bttsH:val('bttsHome'),bttsA:val('bttsAway'),failScoreH:val('failScoreHome'),failScoreA:val('failScoreAway'),
+    cleanSheetH:val('cleanSheetHome'),cleanSheetA:val('cleanSheetAway'),
+    goal1hH:val('avgGoal1hHome'),goal1hA:val('avgGoal1hAway'),scored1hH:val('scored1hHome'),scored1hA:val('scored1hAway'),
+    conc1hH:val('conc1hHome'),conc1hA:val('conc1hAway'),goal2hH:val('avgGoal2hHome'),goal2hA:val('avgGoal2hAway'),
+    scored2hH:val('scored2hHome'),scored2hA:val('scored2hAway'),conc2hH:val('conc2hHome'),conc2hA:val('conc2hAway'),
+    avgCornerH:val('avgCornerHome'),avgCornerA:val('avgCornerAway'),teamCornerH:val('teamCornerHome'),teamCornerA:val('teamCornerAway'),
+    teamCornerAgH:val('teamCornerAgHome'),teamCornerAgA:val('teamCornerAgAway'),over95cH:val('over95cornerHome'),over95cA:val('over95cornerAway'),
+    avgCardH:val('avgCardHome'),avgCardA:val('avgCardAway'),teamCardH:val('teamCardHome'),teamCardA:val('teamCardAway'),
+    teamCardAgH:val('teamCardAgHome'),teamCardAgA:val('teamCardAgAway'),
+    possH:val('possHome'),possA:val('possAway'),sogH:val('sogHome'),sogA:val('sogAway'),dangerH:val('dangerHome'),dangerA:val('dangerAway'),
+  };
+  const la=2.5;
+  const lrH=Math.max(0.3,(d.avgScoredH*d.avgConcA)/la*1.05);
+  const lrA=Math.max(0.2,(d.avgScoredA*d.avgConcH)/la*0.95);
+  const lH=lrH*0.5+(d.xgH||lrH)*0.3+(d.avgScoredH+d.avgConcA)/2*0.2;
+  const lA=lrA*0.5+(d.xgA||lrA)*0.15+(d.avgScoredA+d.avgConcH)/2*0.2+(d.xgaH||lrA)*0.15;
+  const mG=6;let pm=[],hw=0,dr=0,aw=0,o25=0,o15=0,o35=0,bt=0;
+  for(let i=0;i<=mG;i++){pm[i]=[];for(let j=0;j<=mG;j++){let p=poisson(i,lH)*poisson(j,lA);pm[i][j]=p;if(i>j)hw+=p;else if(i===j)dr+=p;else aw+=p;if(i+j>2.5)o25+=p;if(i+j>1.5)o15+=p;if(i+j>3.5)o35+=p;if(i>0&&j>0)bt+=p;}}
+  const markets=[];
+  const mkData=[
+    {name:'Maç Sonucu',icon:'⚽',ind:[{n:'Galibiyet farkı',p:(d.winPctH-d.winPctA)>30},{n:'xG üstünlüğü',p:d.xgH>d.xgA},{n:'Poisson MS',p:hw>0.45},{n:'Gol farkı',p:d.avgScoredH>d.avgScoredA+0.5},{n:'Savunma',p:d.avgConcH<d.avgConcA}],pred:()=>hw>aw?(hw>dr?`${home} Kazanır`:'Beraberlik'):`${away} Kazanır`,detail:`1:%${(hw*100).toFixed(1)}|X:%${(dr*100).toFixed(1)}|2:%${(aw*100).toFixed(1)}`},
+    {name:'Üst 2.5 Gol',icon:'🎯',ind:[{n:'Ort.gol>2.5(Ev)',p:d.avgGoalH>2.5},{n:'Ort.gol>2.5(Dep)',p:d.avgGoalA>2.5},{n:'Üst2.5%>65(Ev)',p:d.over25H>=65},{n:'Üst2.5%>65(Dep)',p:d.over25A>=65},{n:'xG+xGA>3.5',p:(d.xgH+d.xgaA)>3.5||(d.xgA+d.xgaH)>3.5},{n:'Poisson',p:o25>0.55}],pred:(c)=>c>=60?'Üst 2.5 ✅':'Alt 2.5',detail:`Poisson:%${(o25*100).toFixed(1)}`},
+    {name:'KG',icon:'⚡',ind:[{n:'KG%>60(Ev)',p:d.bttsH>=60},{n:'KG%>60(Dep)',p:d.bttsA>=60},{n:'GolYemez düşük',p:d.cleanSheetH<30&&d.cleanSheetA<30},{n:'GolAtamayan düşük',p:d.failScoreH<30&&d.failScoreA<30},{n:'Poisson KG',p:bt>0.50}],pred:(c)=>c>=60?'KG Var ✅':'KG Yok',detail:`Poisson:%${(bt*100).toFixed(1)}`},
+    {name:'Üst 1.5',icon:'📈',ind:[{n:'Ort>1.5(Ev)',p:d.avgGoalH>1.5},{n:'Ort>1.5(Dep)',p:d.avgGoalA>1.5},{n:'%>75(Ev)',p:d.over15H>=75},{n:'%>75(Dep)',p:d.over15A>=75},{n:'Poisson',p:o15>0.70}],pred:(c)=>c>=60?'Üst 1.5 ✅':'Alt 1.5',detail:`Poisson:%${(o15*100).toFixed(1)}`},
+    {name:'Üst 9.5 Korner',icon:'🚩',ind:[{n:'Korner>9.5(Ev)',p:d.avgCornerH>9.5},{n:'Korner>9.5(Dep)',p:d.avgCornerA>9.5},{n:'%>65',p:(d.over95cH+d.over95cA)/2>=65},{n:'Tahmini>9.5',p:(d.teamCornerH+d.teamCornerAgA+d.teamCornerA+d.teamCornerAgH)/2>9.5}],pred:(c)=>c>=60?'Üst 9.5 ✅':'Alt 9.5',detail:`Tahmini:${((d.teamCornerH+d.teamCornerAgA+d.teamCornerA+d.teamCornerAgH)/2).toFixed(1)}`},
+    {name:'2Y Üst 1.5',icon:'⏱',ind:[{n:'2Y>1.5(Ev)',p:d.goal2hH>1.5},{n:'2Y>1.5(Dep)',p:d.goal2hA>1.5},{n:'2Y atılan↑',p:d.scored2hH>1||d.scored2hA>1},{n:'2Y yenilen↑',p:d.conc2hH>0.8||d.conc2hA>0.8}],pred:(c)=>c>=60?'2Y Üst 1.5 ✅':'2Y Alt 1.5',detail:`Beklenen:${((d.scored2hH+d.conc2hA+d.scored2hA+d.conc2hH)/2).toFixed(1)}`},
+    {name:'Üst 3.5 Kart',icon:'🟨',ind:[{n:'Kart>3.5(Ev)',p:d.avgCardH>3.5},{n:'Kart>3.5(Dep)',p:d.avgCardA>3.5},{n:'Tahmini>3.5',p:(d.teamCardH+d.teamCardAgA+d.teamCardA+d.teamCardAgH)/2>3.5}],pred:(c)=>c>=60?'Üst 3.5 ✅':'Alt 3.5',detail:`Tahmini:${((d.teamCardH+d.teamCardAgA+d.teamCardA+d.teamCardAgH)/2).toFixed(1)}`},
+  ];
+  for(const mk of mkData){
+    const pc=mk.ind.filter(i=>i.p).length;
+    const conf=Math.min(95,pc/mk.ind.length*100);
+    const prediction=typeof mk.pred==='function'?(mk.pred.length?mk.pred(conf):mk.pred()):mk.pred;
+    markets.push({name:mk.name,prediction,confidence:conf,confluence:`${pc}/${mk.ind.length}`,indicators:mk.ind.map(i=>({name:i.n,pass:i.p})),probDetail:mk.detail,icon:mk.icon});
+  }
+  $('gaugeSection').innerHTML=markets.slice(0,4).map(m=>{
+    const c=confClass(m.confidence),b=m.confidence>=75?'green':m.confidence>=50?'orange':'red';
+    return`<div class="gauge-card ${c}"><div class="gauge-title"><span>${m.icon} ${m.name}</span><div class="gauge-stars">${[1,2,3].map(i=>`<div class="star ${m.confidence>=i*25+25?'filled':'empty'}"></div>`).join('')}</div></div><div class="gauge-value ${b}">${m.prediction}</div><div class="gauge-bar-wrap"><div class="gauge-bar ${b}" style="width:${m.confidence}%"></div></div><div class="gauge-detail">${m.probDetail}</div><div class="gauge-indicators">${m.indicators.map(i=>`<span class="indicator ${i.pass?'pass':'fail'}">${i.pass?'✓':'✗'} ${i.name}</span>`).join('')}</div></div>`;
+  }).join('');
+  $('predTableBody').innerHTML=markets.map(m=>{
+    const c=confClass(m.confidence),v=verdictLabel(m.confidence);
+    return`<tr><td style="font-weight:600">${m.icon} ${m.name}</td><td><strong>${m.prediction}</strong></td><td><span class="confidence-pill ${c}">${m.confidence.toFixed(0)}%</span></td><td style="font-family:'JetBrains Mono';font-size:10px;">${m.confluence}</td><td><span class="verdict ${v.cls}">${v.text}</span></td></tr>`;
+  }).join('');
+  let ph=`<div class="poisson-grid" style="grid-template-columns:40px repeat(7,1fr);"><div class="poisson-cell header">${home.substring(0,3)}\\${away.substring(0,3)}</div>`;
+  for(let j=0;j<=mG;j++)ph+=`<div class="poisson-cell header">${j}</div>`;
+  for(let i=0;i<=mG;i++){ph+=`<div class="poisson-cell header">${i}</div>`;for(let j=0;j<=mG;j++){const p=pm[i][j]*100;ph+=`<div class="poisson-cell ${p>=8?'highlight':''}">${p.toFixed(1)}%</div>`;}}
+  ph+='</div>';
+  $('poissonGrid').innerHTML=ph;
+  let sc=[];for(let i=0;i<=mG;i++)for(let j=0;j<=mG;j++)sc.push({h:i,a:j,p:pm[i][j]});
+  sc.sort((a,b)=>b.p-a.p);
+  $('poissonSummary').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-size:10px;color:var(--text-muted);font-weight:600;">EN OLASI:</span>${sc.slice(0,5).map((s,i)=>`<span style="padding:5px 10px;background:${i===0?'var(--accent-green-dim)':'var(--bg-secondary)'};border:1px solid ${i===0?'rgba(0,230,138,0.3)':'var(--border)'};border-radius:6px;font-family:'JetBrains Mono';font-size:11px;font-weight:700;color:${i===0?'var(--accent-green)':'var(--text-primary)'};">${s.h}-${s.a} <span style="font-size:9px;color:var(--text-muted);">%${(s.p*100).toFixed(1)}</span></span>`).join('')}</div><div style="margin-top:8px;font-size:10px;color:var(--text-muted);">λ Ev:<strong style="color:var(--accent-green)">${lH.toFixed(2)}</strong> | λ Dep:<strong style="color:var(--accent-red)">${lA.toFixed(2)}</strong></div>`;
+  $('halfGrid').innerHTML=`<div class="half-card"><h3>⏱ 1.Yarı</h3><div class="half-stat-row"><span class="label">Ev gol</span><span class="val">${d.goal1hH}</span></div><div class="half-stat-row"><span class="label">Dep gol</span><span class="val">${d.goal1hA}</span></div><div class="half-stat-row"><span class="label">${home} atılan</span><span class="val">${d.scored1hH}</span></div><div class="half-stat-row"><span class="label">Beklenen</span><span class="val" style="color:var(--accent-cyan)">${((d.scored1hH+d.conc1hA+d.scored1hA+d.conc1hH)/2).toFixed(1)}</span></div></div><div class="half-card"><h3>⏱ 2.Yarı</h3><div class="half-stat-row"><span class="label">Ev gol</span><span class="val">${d.goal2hH}</span></div><div class="half-stat-row"><span class="label">Dep gol</span><span class="val">${d.goal2hA}</span></div><div class="half-stat-row"><span class="label">${home} atılan</span><span class="val">${d.scored2hH}</span></div><div class="half-stat-row"><span class="label">Beklenen</span><span class="val" style="color:var(--accent-cyan)">${((d.scored2hH+d.conc2hA+d.scored2hA+d.conc2hH)/2).toFixed(1)}</span></div></div>`;
+  const eC=(d.teamCornerH+d.teamCornerAgA+d.teamCornerA+d.teamCornerAgH)/2;
+  const eK=(d.teamCardH+d.teamCardAgA+d.teamCardA+d.teamCardAgH)/2;
+  $('marketGrid').innerHTML=`<div class="market-card"><h3>🚩 Korner</h3><div class="subtitle">Tahmini: ${eC.toFixed(1)}</div><div class="market-stat"><span class="name">${home}</span><div class="values"><span class="val">${d.teamCornerH}</span><div class="bar-mini"><div class="bar-mini-fill" style="width:${Math.min(100,d.teamCornerH/10*100)}%;background:var(--accent-green);"></div></div></div></div><div class="market-stat"><span class="name">${away}</span><div class="values"><span class="val">${d.teamCornerA}</span><div class="bar-mini"><div class="bar-mini-fill" style="width:${Math.min(100,d.teamCornerA/10*100)}%;background:var(--accent-blue);"></div></div></div></div></div><div class="market-card"><h3>🟨 Kart</h3><div class="subtitle">Tahmini: ${eK.toFixed(1)}</div><div class="market-stat"><span class="name">${home}</span><div class="values"><span class="val">${d.teamCardH}</span><div class="bar-mini"><div class="bar-mini-fill" style="width:${Math.min(100,d.teamCardH/6*100)}%;background:var(--accent-orange);"></div></div></div></div><div class="market-stat"><span class="name">${away}</span><div class="values"><span class="val">${d.teamCardA}</span><div class="bar-mini"><div class="bar-mini-fill" style="width:${Math.min(100,d.teamCardA/6*100)}%;background:var(--accent-orange);"></div></div></div></div></div><div class="market-card"><h3>📋 Profil</h3><div class="subtitle">Genel veriler</div><div class="market-stat"><span class="name">${home} top%</span><div class="values"><span class="val">%${d.possH}</span><div class="bar-mini"><div class="bar-mini-fill" style="width:${d.possH}%;background:var(--accent-green);"></div></div></div></div><div class="market-stat"><span class="name">${away} top%</span><div class="values"><span class="val">%${d.possA}</span><div class="bar-mini"><div class="bar-mini-fill" style="width:${d.possA}%;background:var(--accent-blue);"></div></div></div></div></div>`;
+  switchPage('results');
+}
+</script>
+</body>
+</html>
